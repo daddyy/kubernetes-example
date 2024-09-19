@@ -1,0 +1,9 @@
+*.env
+*-resolved.yaml
+/.history
+/app/www/data
+/app/vendor
+/log
+*.log
+*.cch
+/kubernetes/out/*

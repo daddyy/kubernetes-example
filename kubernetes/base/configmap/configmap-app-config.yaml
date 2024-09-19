@@ -1,0 +1,13 @@
+# @deprecated, přesunuto do kustomize
+
+# není potřeba řešit configmapu -> efektivnější je řešit pouze pomoci kustomize, hodnoty na jendom místě,
+# nemusím řešěit rozdíl při nasazení, proměnné se aplikuji tam kde je třeba svým magicem s ohledem na suffix
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_MODE: "0"
+  APP_IMAGE_VERSION: ${APP_IMAGE_VERSION}
+  NGINX_IMAGE_VERSION: ${NGINX_IMAGE_VERSION}

@@ -1,0 +1,101 @@
+version: "3.9"
+services:
+  # toto by sice šlo, ale není to vhodný nápad pro moje testování, ale pokud bychom řešili čistou instalaci a seed db proč ne :-)
+  # mysql:
+  #   container_name: docker-mysql
+  #   image: mariadb:latest
+  #   # pokud se kontejner zastaví, restartuj jen v případě chyby
+  #   restart: on-failure
+  #   # pokud kontejner je spuštěný, spusť následující commanf
+  #   command: mysqld --sql_mode="" --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_520_ci
+  #   # reference na soubory, které jsou použity při upu, tato reference není vhodná poukazuje na všechny envy, lepší ji vypsat
+  #   env_file:
+  #     - .env
+  #   # pokud jep oužito pozor, docker přebírá a upravuje práva na moutnutém adresáři
+  #   volumes:
+  #     - /var/lib/mysql
+  #   networks:
+  #     - mysql-network
+  #   ports:
+  #     - ${MYSQL_PORT}
+  # redis:
+  #   image: "redis:latest"
+  #   ports:
+  #     - "6379:6379"
+  php-fpm:
+    build:
+      #k buildu tohoto kontejneru použí specifický předpis z Docketfile
+      dockerfile: ./docker/php/Dockerfile
+    container_name: docker-php-fpm
+    # název image který je použit
+    image: ${IMAGE_PREFIX}/${APP_NAME}:${APP_IMAGE_VERSION}
+    # co se má stát pokud container se zastaví / spadne, v tomto případě automatický restart
+    restart: always
+    env_file:
+      - .env
+    # healthcheck:
+
+    networks:
+      # propoj kontejner na těchto sítích, tj. propojuji jednotlivé kontejnery s danou sití
+      - nginx-network
+      # - mysql-network
+    ports:
+      # publikuj kontejner na tomto portu, nemusí být pouze jeden, například 80. 443 etc.
+      - ${PHP_PORT}
+    volumes:
+      # připoj / moutni src na destinaci v kontejneru, pro vývoj pecka, pro produkci je lepší vše řešit v dockerfilu (např. copy / mount etc.)
+      - ./app/:${DIR_ROOT}
+    depends_on:
+      # specifikuje na čem tato slušba závisí, tj spusť nejdříve mysql následně php apod.
+      - mysql
+  nginx:
+    build:
+      dockerfile: ./docker/nginx/Dockerfile
+      # šlo by použít takto kde context je cesta k buildovanému filu, následně pwd v docker file se liší a je nutné na toto pak upravit cesty v něm
+      # dockerfile: Dockerfile
+      # context: /docker/nginx
+    container_name: docker-nginx
+    image: ${IMAGE_PREFIX}/nginx:${NGINX_IMAGE_VERSION}
+    networks:
+      - nginx-network
+    # vystav na portu:poslouchej na portu
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+    # tyto promněnné jsou použity až při up docker image, tzn. pokud bych je chtěl použít rovnou v buildu je nutné je přenést do dockerfile
+    environment:
+      - PHP_SERVICE=${PHP_SERVICE}
+      - PHP_PORT=${PHP_PORT}
+      - NGINX_PORT=${NGINX_PORT}
+      - NGINX_SERVER_NAME=${NGINX_SERVER_NAME}
+      - DIR_WWW=${DIR_WWW}
+      - NGINX_ACCESS_LOG=${NGINX_ACCESS_LOG}
+      - NGINX_ERROR_LOG=${NGINX_ERROR_LOG}
+    depends_on:
+      - php-fpm
+    # není nutné mountovat celou aplikaci, postačuje mount pouze jejího vstupu v mém případě jde vše přes index.php, který je v public rootu)
+    volumes:
+      - ./app/www:${DIR_WWW}
+  # pouze pokus stejně používáš dbeaver :-)
+  # phpmyadmin:
+  #   container_name: docker-pma
+  #   image: phpmyadmin/phpmyadmin
+  #   env_file: .env
+  #   # pokud tyto proměnné budou v env_file, nejsou použity při startu kontejneru
+  #   environment:
+  #     - PMA_HOST=${MYSQL_HOST}
+  #     - PMA_PORT=${MYSQL_PORT}
+  #     - PMA_USER=${MYSQL_USER}
+  #     - PMA_PASSWORD=${MYSQL_PASSWORD}
+  #   depends_on:
+  #     - mysql
+  #   ports:
+  #     - ${PMA_PORT}:${NGINX_PORT}
+  #   networks:
+  #     - mysql-network
+  #   restart: always
+networks:
+  # název sítě a použítý driver
+  nginx-network:
+    driver: bridge
+  # mysql-network:
+  #   driver: bridge

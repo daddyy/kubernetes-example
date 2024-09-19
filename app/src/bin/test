@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+require_once(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'boostrap.php');
+infinityLoopTouch();
+
+/**
+ * @param int $testType
+ * @return void
+ */
+function infinityLoopTouch(): void
+{
+    set_time_limit(0);
+    touchToTestingFile();
+    /** @phpstan-ignore-next-line */
+    while (true) {
+        $rand = rand(5, 20);
+        echo "sleep: " . $rand . ", diff: " . time() - filemtime(FILE_TESTING_LOOP) . "\n";
+        touchToTestingFile();
+        clearstatcache();
+        sleep($rand);
+    }
+}
+
+function touchToTestingFile(): bool
+{
+    return touch(FILE_TESTING_LOOP, time());
+}

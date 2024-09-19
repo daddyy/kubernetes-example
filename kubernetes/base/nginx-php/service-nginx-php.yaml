@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-nginx-php
+spec:
+  selector:
+    app: nginx-php
+  ports: ### pokud chcmee vystavovat na více portech
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP

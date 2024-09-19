@@ -1,0 +1,42 @@
+server {
+    listen $NGINX_PORT default_server;
+    listen [::]:$NGINX_PORT default_server;
+    server_name $NGINX_SERVER_NAME;
+
+    root $DIR_WWW;
+
+    error_log ${NGINX_ERROR_LOG};
+    access_log ${NGINX_ACCESS_LOG};
+
+    index index.php;
+
+    location /nginx-status {
+        stub_status on;
+        allow 127.0.0.1;
+        deny all;
+    }
+
+    location ~* \.(woff|swg|jpg|jpeg|gif|png|css|bmp|swf|js|ico|tiff|bak|svg)$ {
+        expires 1M;
+        access_log off;
+        add_header Cache-Control "public";
+        try_files $uri /index.php$is_args$args;
+    }
+
+    location / {
+        try_files $uri /index.php$is_args$args;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass $PHP_SERVICE:$PHP_PORT;
+        fastcgi_index index.php;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}

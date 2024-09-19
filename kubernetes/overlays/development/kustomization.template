@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: development
+namePrefix: dev-
+
+### nemá smysl používat nad config mapout ale přímo nad deploymentem, servisou
+# patchesStrategicMerge:
+# - configmap-app-config.yaml
+# - secret-mysql-secrets.yaml
+
+configMapGenerator:
+  - name: ingress-nginx-php
+  - name: app-config
+    literals:
+      - 'APP_MODE="2"'
+      - "APP_IMAGE_VERSION=${APP_IMAGE_VERSION}"
+      - "NGINX_IMAGE_VERSION=${NGINX_IMAGE_VERSION}"
+  - name: nginx-config
+    literals:
+      - "NGINX_SERVER_NAME=${NGINX_SERVER_NAME}"
+      - "NGINX_ACCESS_LOG=/proc/1/fd/2"
+      - "NGINX_ERROR_LOG=/proc/1/fd/2"
+      - "PHP_SERVICE=127.0.0.1"
+      - "DIR_WWW=/var/www/html/www"
+      - 'NGINX_PORT="${NGINX_PORT}"'
+      - 'PHP_PORT="${PHP_PORT}"'
+secretGenerator:
+  - name: mysql-secrets
+    literals:
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_PORT=${MYSQL_PORT}"
+      - "MYSQL_HOST=${MYSQL_HOST}"
+      - "MYSQL_DATABASE=${MYSQL_DATABASE}"
+      - "MYSQL_USER=${MYSQL_USER}"
+    type: Opaque
+replicas:
+  - name: deployment-nginx-php
+    count: 2

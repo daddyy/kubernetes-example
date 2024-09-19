@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ingress/ingress-nginx-php.yaml
+  - nginx-php/deployment-nginx-php.yaml
+  - nginx-php/service-nginx-php.yaml
+  # - mysql/service-mysql.yaml

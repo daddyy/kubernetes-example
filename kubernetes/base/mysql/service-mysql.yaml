@@ -1,0 +1,15 @@
+### není nutné, není potřeba definovat tohoto hosta, z clusteru se dostaneme ven i bez definice pomoci její domény, ip
+### vždy závisí na koncové službě a na politice pro danou službu vůči aplikaci
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: external-mysql
+  clusterIP: None
+  ports:
+    - name: mysql
+      port: 3306
+  externalIPs:
+    - 192.168.49.1

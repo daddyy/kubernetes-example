@@ -1,0 +1,7 @@
+# @deprecated, přesunuto do kustomize
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-php
+# data:

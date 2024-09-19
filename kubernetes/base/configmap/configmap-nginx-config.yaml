@@ -1,0 +1,17 @@
+# @deprecated, přesunuto do kustomize
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  # tyto envy nejsou potřeba již je mám vybuildované, aplikace o nich nemusi vubec vědět
+  # mám v tom nějaký bordel, jakto že pokud vybuilduji image tak potřebuji znovu proměnné pro nginx.conf, který vychází z template?
+  # => ano je to tak docker compose environment proměnné se procpou pouze při startu, to stejné se děje i zde
+  NGINX_SERVER_NAME: ${NGINX_SERVER_NAME}
+  NGINX_ACCESS_LOG: /proc/1/fd/2
+  NGINX_ERROR_LOG: /proc/1/fd/2
+  PHP_SERVICE: 127.0.0.1
+  DIR_WWW: /var/www/html/www
+  NGINX_PORT: "80"
+  PHP_PORT: "9000"

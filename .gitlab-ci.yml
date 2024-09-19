@@ -1,0 +1,80 @@
+variables:
+  VERSION_TAG: ${CI_PIPELINE_ID}-${CI_COMMIT_SHA}
+  APP_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/learning
+  NGINX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/nginx
+  ENV_FILE: ./env/env.template
+
+stages:
+  - build
+  - push
+  - deploy
+
+include:
+  - project: "tools/gitlab-ci-libs"
+    ref: v0.0.12
+    file:
+      - "docker.yml"
+
+build-main:
+  stage: build
+  extends: [.docker-build-docker-runner]
+  script:
+    - docker build -f ./docker/nginx/Dockerfile --build-arg env_file=.${ENV_FILE} -t ${NGINX_IMAGE_NAME}:${VERSION_TAG} .
+    - docker build -f ./docker/php/Dockerfile --build-arg env_file=${ENV_FILE} -t ${APP_IMAGE_NAME}:${VERSION_TAG} .
+    - docker push ${NGINX_IMAGE_NAME}:${VERSION_TAG}
+    - docker push ${APP_IMAGE_NAME}:${VERSION_TAG}
+  only:
+    - main
+
+# neexistuje nějaké hloupější možnost než jen pullovat image dokola? nemyslím si že by bylo uplně super všechno dělat v jednom stepu nebo jo?
+# možná použít artifact, tím pádem bych řešil, po celou dobu mít pouze artifakt a až na konci bych řešil push
+# => uplně nemá smysl pokud by image dosahoval ohromné velikosti, push v tomto případě je schopen porovnat jednotlivé vrstvy a tím mění jen určítý obsah,
+# ba naopak save uloží celý image se všema jeho naležitostma
+docker-test:
+  stage: build
+  extends: [.docker-build-docker-runner]
+  script:
+    - echo ${APP_IMAGE_NAME}:${VERSION_TAG}
+    - echo ${NGINX_IMAGE_NAME}:${VERSION_TAG}
+    - docker pull ${NGINX_IMAGE_NAME}:${VERSION_TAG}
+    - docker pull ${APP_IMAGE_NAME}:${VERSION_TAG}
+    # - docker run --rm ${NGINX_IMAGE_NAME}:${VERSION_TAG} sh -c "/usr/local/bin/docker-healtcheck.sh"
+    # - docker run --rm ${APP_IMAGE_NAME}:${VERSION_TAG} sh -c "/usr/local/bin/docker-healtcheck.sh"
+  needs:
+    - build-main
+
+docker-push-latest:
+  stage: build
+  extends: [.docker-build-docker-runner]
+  script:
+    - docker pull ${NGINX_IMAGE_NAME}:${VERSION_TAG}
+    - docker pull ${APP_IMAGE_NAME}:${VERSION_TAG}
+    - docker tag ${NGINX_IMAGE_NAME}:${VERSION_TAG} ${NGINX_IMAGE_NAME}:latest
+    - docker tag ${APP_IMAGE_NAME}:${VERSION_TAG} ${APP_IMAGE_NAME}:latest
+    - docker push ${NGINX_IMAGE_NAME}:latest
+    - docker push ${APP_IMAGE_NAME}:latest
+  needs:
+    - docker-test
+  only:
+    - main
+
+docker-clean:
+  stage: build
+  # before_script:
+  #   - apk add curl
+  extends: [.docker-build-docker-runner]
+  script:
+    - echo "remove docker images"
+    # použij gitlab api pro čištění
+  rules:
+    - when: on_failure
+
+deploy-main:
+  stage: deploy
+  script:
+    - echo "kubernetes production apply"
+    # - kustomize build ./kubernetes/overlays/production -o ./kubernetes/out/
+    # - kubectl apply -f ./kubernetes/overlays/namespaces.yaml
+    # - kubectl apply -f ./kubernetes/out/
+  only:
+    - main

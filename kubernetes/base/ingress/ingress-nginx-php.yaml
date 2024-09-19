@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-dev
+  namespace: ${NAMESPACE}
+  labels:
+    app: nginx-php
+spec:
+  rules:
+    - host: ${NGINX_SERVER_NAME}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service-nginx-php
+                port:
+                  name: http

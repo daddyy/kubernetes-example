@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: production
+namePrefix: prod-
+
+configMapGenerator:
+  - name: ingress-nginx-php
+  - name: app-config
+    literals:
+      - 'APP_MODE="0"'
+      - "APP_IMAGE_VERSION=${APP_IMAGE_VERSION}"
+      - "NGINX_IMAGE_VERSION=${NGINX_IMAGE_VERSION}"
+  - name: nginx-config
+    literals:
+      - "NGINX_SERVER_NAME=${NGINX_SERVER_NAME}"
+      - "NGINX_ACCESS_LOG=/proc/1/fd/2"
+      - "NGINX_ERROR_LOG=/proc/1/fd/2"
+      - "PHP_SERVICE=127.0.0.1"
+      - "DIR_WWW=/var/www/html/www"
+      - 'NGINX_PORT="80"'
+      - 'PHP_PORT="9000"'
+secretGenerator:
+  - name: mysql-secrets
+    literals:
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_PORT=3306"
+      - "MYSQL_HOST=192.168.49.1"
+      - "MYSQL_DATABASE=test"
+      - "MYSQL_USER=test"
+    type: Opaque
+replicas:
+  - name: deployment-nginx-php
+    count: 2

@@ -1,0 +1,10 @@
+# kind: "Endpoints"
+# apiVersion: "v1"
+# metadata:
+#   name: "external-mysql-service"
+# subsets:
+#   - addresses:
+#       - ip: "192.168.1.159"
+#     ports:
+#       - port: 3306
+#         name: "mysql-service"
